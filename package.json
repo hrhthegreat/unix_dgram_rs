@@ -2,14 +2,12 @@
   "name": "unix_dgram_rs",
   "version": "0.1.0-alpha.0",
   "description": "UNIX datagram sockets for Node.js with prebuilt native binaries.",
-  "license": "ISC",
+  "license": "MIT",
   "type": "commonjs",
   "main": "index.js",
   "files": [
     "index.js",
-    "*.node",
     "lib",
-    "npm",
     "Cargo.toml",
     "Cargo.lock",
     "src"

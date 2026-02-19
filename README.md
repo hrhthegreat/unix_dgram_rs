@@ -46,9 +46,3 @@ npm i
 npm run build
 npm test
 ```
-
-## Publish flow
-
-- CI builds prebuilt artifacts for target triples.
-- `napi prepublish -t npm` generates per-platform npm packages under `npm/`.
-- Publish root package and generated platform packages.

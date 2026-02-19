@@ -2,7 +2,7 @@
 name = "unix_dgram_rs"
 version = "0.1.0"
 edition = "2021"
-license = "ISC"
+license = "MIT"
 
 [lib]
 crate-type = ["cdylib"]

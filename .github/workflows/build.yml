@@ -2,8 +2,15 @@ name: build
 
 on:
   workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish packages to npm
+        required: false
+        default: "false"
   push:
     branches: [main]
+    tags:
+      - "v*"
   pull_request:
 
 jobs:
@@ -39,3 +46,59 @@ jobs:
         with:
           name: bindings-${{ matrix.target }}
           path: "*.node"
+
+  publish:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v') || github.event.inputs.publish == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - run: npm ci
+      - run: npx napi create-npm-dirs
+      - run: |
+          for pkg in npm/*; do
+            node_file=$(node -p "require('./${pkg}/package.json').main")
+            src=""
+            for candidate in artifacts/*/"$node_file"; do
+              if [ -f "$candidate" ]; then
+                src="$candidate"
+                break
+              fi
+            done
+            if [ -z "$src" ]; then
+              echo "Missing build artifact for $node_file"
+              exit 1
+            fi
+            cp "$src" "${pkg}/$node_file"
+          done
+      - run: npm publish ./npm/darwin-arm64 --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - run: npm publish ./npm/darwin-x64 --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - run: npm publish ./npm/linux-arm64-gnu --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - run: npm publish ./npm/linux-x64-gnu --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - run: npm publish ./npm/win32-x64-msvc --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - run: npm publish ./npm/win32-arm64-msvc --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

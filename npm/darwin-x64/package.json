@@ -9,7 +9,7 @@
     "unix_dgram_rs.darwin-x64.node"
   ],
   "description": "UNIX datagram sockets for Node.js with prebuilt native binaries.",
-  "license": "ISC",
+  "license": "MIT",
   "engines": {
     "node": ">=18"
   },
