@@ -14,7 +14,9 @@ UNIX datagram sockets for Node.js, rewritten with Rust + Node-API (`napi-rs`) an
 npm i unix_dgram_rs
 ```
 
-On supported platforms (`darwin-x64`, `darwin-arm64`, `linux-x64-gnu`, `linux-arm64-gnu`), prebuilt binaries are downloaded through optional platform packages.
+On supported platforms (`darwin-x64`, `darwin-arm64`, `linux-x64-gnu`, `linux-arm64-gnu`, `win32-x64-msvc`, `win32-arm64-msvc`), prebuilt binaries are downloaded through optional platform packages.
+
+Windows binaries are currently dummy/stub implementations to keep install/build flows working; `unix_dgram` runtime operations are not supported on Windows yet.
 
 ## Usage
 

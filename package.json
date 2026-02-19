@@ -30,7 +30,9 @@
     "unix_dgram_rs-darwin-arm64": "0.1.0-alpha.0",
     "unix_dgram_rs-darwin-x64": "0.1.0-alpha.0",
     "unix_dgram_rs-linux-arm64-gnu": "0.1.0-alpha.0",
-    "unix_dgram_rs-linux-x64-gnu": "0.1.0-alpha.0"
+    "unix_dgram_rs-linux-x64-gnu": "0.1.0-alpha.0",
+    "unix_dgram_rs-win32-x64-msvc": "0.1.0-alpha.0",
+    "unix_dgram_rs-win32-arm64-msvc": "0.1.0-alpha.0"
   },
   "napi": {
     "binaryName": "unix_dgram_rs",
@@ -38,7 +40,9 @@
       "aarch64-apple-darwin",
       "x86_64-apple-darwin",
       "aarch64-unknown-linux-gnu",
-      "x86_64-unknown-linux-gnu"
+      "x86_64-unknown-linux-gnu",
+      "x86_64-pc-windows-msvc",
+      "aarch64-pc-windows-msvc"
     ]
   },
   "devDependencies": {

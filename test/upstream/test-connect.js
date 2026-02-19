@@ -2,10 +2,13 @@
 
 const assert = require('node:assert');
 const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
 const unix = require('../../index.js');
 
 const suffix = `${process.pid}-${Date.now()}`;
-const SOCKNAME = `/tmp/unix_dgram_${suffix}.sock`;
+const TMPDIR = process.platform === 'win32' ? os.tmpdir() : '/tmp';
+const SOCKNAME = path.join(TMPDIR, `unix_dgram_${suffix}.sock`);
 
 let seenCount = 0;
 const expected = 300;

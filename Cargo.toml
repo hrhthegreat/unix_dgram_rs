@@ -10,6 +10,8 @@ crate-type = ["cdylib"]
 [dependencies]
 napi = { version = "2", default-features = false, features = ["napi6"] }
 napi-derive = "2"
+
+[target.'cfg(unix)'.dependencies]
 libc = "0.2"
 
 [build-dependencies]

@@ -1,0 +1,19 @@
+{
+  "name": "unix_dgram_rs-win32-arm64-msvc",
+  "version": "0.1.0-alpha.0",
+  "cpu": [
+    "arm64"
+  ],
+  "main": "unix_dgram_rs.win32-arm64-msvc.node",
+  "files": [
+    "unix_dgram_rs.win32-arm64-msvc.node"
+  ],
+  "description": "UNIX datagram sockets for Node.js with prebuilt native binaries.",
+  "license": "ISC",
+  "engines": {
+    "node": ">=18"
+  },
+  "os": [
+    "win32"
+  ]
+}

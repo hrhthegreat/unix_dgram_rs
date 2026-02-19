@@ -3,13 +3,15 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
+const os = require('node:os');
 const path = require('node:path');
 
 const unix = require('../index.js');
 
 function socketPath(name) {
   const suffix = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
-  return path.join('/tmp', `udn-${name}-${suffix}.sock`);
+  const dir = process.platform === 'win32' ? os.tmpdir() : '/tmp';
+  return path.join(dir, `udn-${name}-${suffix}.sock`);
 }
 
 function waitForEvent(emitter, event, timeoutMs = 2000) {
