@@ -1,0 +1,19 @@
+{
+  "name": "unix_dgram_rs-darwin-x64",
+  "version": "0.1.0-alpha.0",
+  "cpu": [
+    "x64"
+  ],
+  "main": "unix_dgram_rs.darwin-x64.node",
+  "files": [
+    "unix_dgram_rs.darwin-x64.node"
+  ],
+  "description": "UNIX datagram sockets for Node.js with prebuilt native binaries.",
+  "license": "ISC",
+  "engines": {
+    "node": ">=18"
+  },
+  "os": [
+    "darwin"
+  ]
+}

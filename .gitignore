@@ -1,0 +1,9 @@
+target/
+node_modules/
+*.node
+*.tgz
+artifacts/
+npm/*/node_modules/
+npm/*/index.node
+.DS_Store
+npm-debug.log*

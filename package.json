@@ -1,0 +1,47 @@
+{
+  "name": "unix_dgram_rs",
+  "version": "0.1.0-alpha.0",
+  "description": "UNIX datagram sockets for Node.js with prebuilt native binaries.",
+  "license": "ISC",
+  "type": "commonjs",
+  "main": "index.js",
+  "files": [
+    "index.js",
+    "*.node",
+    "lib",
+    "npm",
+    "Cargo.toml",
+    "Cargo.lock",
+    "src"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "napi build --platform --release",
+    "build:debug": "napi build --platform",
+    "artifacts": "napi artifacts",
+    "test": "node --test test/compat.test.js && npm run test:upstream",
+    "test:upstream": "node test/upstream/test-dgram-unix.js && node test/upstream/test-connect.js && node test/upstream/test-connect-callback.js && node test/upstream/test-send-error.js",
+    "prepublishOnly": "napi create-npm-dirs",
+    "version": "napi version"
+  },
+  "optionalDependencies": {
+    "unix_dgram_rs-darwin-arm64": "0.1.0-alpha.0",
+    "unix_dgram_rs-darwin-x64": "0.1.0-alpha.0",
+    "unix_dgram_rs-linux-arm64-gnu": "0.1.0-alpha.0",
+    "unix_dgram_rs-linux-x64-gnu": "0.1.0-alpha.0"
+  },
+  "napi": {
+    "binaryName": "unix_dgram_rs",
+    "targets": [
+      "aarch64-apple-darwin",
+      "x86_64-apple-darwin",
+      "aarch64-unknown-linux-gnu",
+      "x86_64-unknown-linux-gnu"
+    ]
+  },
+  "devDependencies": {
+    "@napi-rs/cli": "^3.5.1"
+  }
+}
