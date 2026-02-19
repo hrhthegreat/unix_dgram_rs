@@ -95,7 +95,6 @@ class UnixDgramSocket extends EventEmitter {
     try {
       this._native.connect(socketPath);
       this.connected = true;
-      this._startReceiveLoop();
       this.emit('connect');
     } catch (err) {
       this.emit('error', errnoException(err, 'connect'));

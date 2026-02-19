@@ -19,6 +19,7 @@ struct ListenerHandle {
 pub struct NativeSocket {
   socket: Mutex<Option<UnixDatagram>>,
   listener: Mutex<Option<ListenerHandle>>,
+  bound_path: Mutex<Option<String>>,
 }
 
 #[napi(object)]
@@ -32,6 +33,18 @@ fn io_to_napi(err: std::io::Error) -> Error {
 }
 
 impl NativeSocket {
+  fn send_wake_signal(&self) {
+    let path = match self.bound_path.lock() {
+      Ok(guard) => guard.clone(),
+      Err(_) => None,
+    };
+    if let Some(path) = path {
+      if let Ok(waker) = UnixDatagram::unbound() {
+        let _ = waker.send_to(&[0], path);
+      }
+    }
+  }
+
   fn stop_listener(&self) -> Result<()> {
     let listener = {
       let mut guard = self
@@ -42,9 +55,67 @@ impl NativeSocket {
     };
     if let Some(listener) = listener {
       listener.stop.store(true, Ordering::Relaxed);
+      self.send_wake_signal();
       let _ = listener.thread.join();
     }
     Ok(())
+  }
+
+  fn send_nonblocking(fd: i32, bytes: &[u8]) -> Result<i32> {
+    let rc = unsafe {
+      libc::send(
+        fd,
+        bytes.as_ptr() as *const libc::c_void,
+        bytes.len(),
+        libc::MSG_DONTWAIT,
+      )
+    };
+    if rc >= 0 {
+      return Ok(0);
+    }
+    let err = std::io::Error::last_os_error();
+    if err.kind() == ErrorKind::WouldBlock {
+      Ok(1)
+    } else {
+      Err(io_to_napi(err))
+    }
+  }
+
+  fn send_to_nonblocking(fd: i32, bytes: &[u8], path: &str) -> Result<i32> {
+    let path_bytes = path.as_bytes();
+    if path_bytes.len() >= 108 {
+      return Err(Error::from_reason("socket path too long".to_string()));
+    }
+    let mut addr: libc::sockaddr_un = unsafe { std::mem::zeroed() };
+    addr.sun_family = libc::AF_UNIX as libc::sa_family_t;
+    for (idx, byte) in path_bytes.iter().enumerate() {
+      addr.sun_path[idx] = *byte as libc::c_char;
+    }
+    addr.sun_path[path_bytes.len()] = 0;
+
+    let base = &addr as *const libc::sockaddr_un as usize;
+    let path_offset = &addr.sun_path as *const _ as usize - base;
+    let addr_len = (path_offset + path_bytes.len() + 1) as libc::socklen_t;
+
+    let rc = unsafe {
+      libc::sendto(
+        fd,
+        bytes.as_ptr() as *const libc::c_void,
+        bytes.len(),
+        libc::MSG_DONTWAIT,
+        &addr as *const libc::sockaddr_un as *const libc::sockaddr,
+        addr_len,
+      )
+    };
+    if rc >= 0 {
+      return Ok(0);
+    }
+    let err = std::io::Error::last_os_error();
+    if err.kind() == ErrorKind::WouldBlock {
+      Ok(1)
+    } else {
+      Err(io_to_napi(err))
+    }
   }
 }
 
@@ -53,10 +124,11 @@ impl NativeSocket {
   #[napi(constructor)]
   pub fn new() -> Result<Self> {
     let sock = UnixDatagram::unbound().map_err(io_to_napi)?;
-    sock.set_nonblocking(true).map_err(io_to_napi)?;
+    sock.set_nonblocking(false).map_err(io_to_napi)?;
     Ok(Self {
       socket: Mutex::new(Some(sock)),
       listener: Mutex::new(None),
+      bound_path: Mutex::new(None),
     })
   }
 
@@ -68,12 +140,17 @@ impl NativeSocket {
       std::fs::remove_file(socket_path).map_err(io_to_napi)?;
     }
     let sock = UnixDatagram::bind(socket_path).map_err(io_to_napi)?;
-    sock.set_nonblocking(true).map_err(io_to_napi)?;
+    sock.set_nonblocking(false).map_err(io_to_napi)?;
     let mut guard = self
       .socket
       .lock()
       .map_err(|_| Error::from_reason("failed to lock socket".to_string()))?;
     *guard = Some(sock);
+    let mut path_guard = self
+      .bound_path
+      .lock()
+      .map_err(|_| Error::from_reason("failed to lock bound path".to_string()))?;
+    *path_guard = Some(path);
     Ok(())
   }
 
@@ -85,11 +162,16 @@ impl NativeSocket {
       .map_err(|_| Error::from_reason("failed to lock socket".to_string()))?;
     if guard.is_none() {
       let sock = UnixDatagram::unbound().map_err(io_to_napi)?;
-      sock.set_nonblocking(true).map_err(io_to_napi)?;
+      sock.set_nonblocking(false).map_err(io_to_napi)?;
       *guard = Some(sock);
     }
     if let Some(sock) = guard.as_ref() {
       sock.connect(path).map_err(io_to_napi)?;
+      let mut path_guard = self
+        .bound_path
+        .lock()
+        .map_err(|_| Error::from_reason("failed to lock bound path".to_string()))?;
+      *path_guard = None;
       Ok(())
     } else {
       Err(Error::from_reason("socket is closed".to_string()))
@@ -103,11 +185,7 @@ impl NativeSocket {
       .lock()
       .map_err(|_| Error::from_reason("failed to lock socket".to_string()))?;
     if let Some(sock) = guard.as_ref() {
-      match sock.send(data.as_ref()) {
-        Ok(_) => Ok(0),
-        Err(err) if err.kind() == ErrorKind::WouldBlock => Ok(1),
-        Err(err) => Err(io_to_napi(err)),
-      }
+      Self::send_nonblocking(sock.as_raw_fd(), data.as_ref())
     } else {
       Err(Error::from_reason("socket is closed".to_string()))
     }
@@ -120,11 +198,7 @@ impl NativeSocket {
       .lock()
       .map_err(|_| Error::from_reason("failed to lock socket".to_string()))?;
     if let Some(sock) = guard.as_ref() {
-      match sock.send_to(data.as_ref(), path) {
-        Ok(_) => Ok(0),
-        Err(err) if err.kind() == ErrorKind::WouldBlock => Ok(1),
-        Err(err) => Err(io_to_napi(err)),
-      }
+      Self::send_to_nonblocking(sock.as_raw_fd(), data.as_ref(), &path)
     } else {
       Err(Error::from_reason("socket is closed".to_string()))
     }
@@ -153,7 +227,6 @@ impl NativeSocket {
       sock.try_clone().map_err(io_to_napi)?
     };
 
-    let fd = recv_sock.as_raw_fd();
     let tsfn: ThreadsafeFunction<RecvPacket> =
       callback.create_threadsafe_function(0, |ctx| Ok(vec![ctx.value]))?;
     let stop = Arc::new(AtomicBool::new(false));
@@ -161,48 +234,25 @@ impl NativeSocket {
     let thread = std::thread::spawn(move || {
       let mut buf = vec![0u8; 64 * 1024];
       while !stop_for_thread.load(Ordering::Relaxed) {
-        let mut pfd = libc::pollfd {
-          fd,
-          events: libc::POLLIN,
-          revents: 0,
-        };
-        let rc = unsafe { libc::poll(&mut pfd, 1, 250) };
-        if rc < 0 {
-          let err = std::io::Error::last_os_error();
-          if err.kind() == ErrorKind::Interrupted {
-            continue;
-          }
-          break;
-        }
-        if rc == 0 {
-          continue;
-        }
-        if (pfd.revents & (libc::POLLERR | libc::POLLHUP | libc::POLLNVAL)) != 0 {
-          break;
-        }
-        if (pfd.revents & libc::POLLIN) == 0 {
-          continue;
-        }
-
-        loop {
-          match recv_sock.recv_from(&mut buf) {
-            Ok((size, addr)) => {
-              let path = addr
-                .as_pathname()
-                .map(|p| p.to_string_lossy().to_string());
-              let packet = RecvPacket {
-                data: Buffer::from(buf[..size].to_vec()),
-                path,
-              };
-              let status = tsfn.call(Ok(packet), ThreadsafeFunctionCallMode::NonBlocking);
-              if status != Status::Ok {
-                return;
-              }
+        match recv_sock.recv_from(&mut buf) {
+          Ok((size, addr)) => {
+            if stop_for_thread.load(Ordering::Relaxed) {
+              break;
             }
-            Err(err) if err.kind() == ErrorKind::WouldBlock => break,
-            Err(err) if err.kind() == ErrorKind::Interrupted => continue,
-            Err(_) => return,
+            let path = addr
+              .as_pathname()
+              .map(|p| p.to_string_lossy().to_string());
+            let packet = RecvPacket {
+              data: Buffer::from(buf[..size].to_vec()),
+              path,
+            };
+            let status = tsfn.call(Ok(packet), ThreadsafeFunctionCallMode::NonBlocking);
+            if status != Status::Ok {
+              return;
+            }
           }
+          Err(err) if err.kind() == ErrorKind::Interrupted => continue,
+          Err(_) => return,
         }
       }
       let _ = tsfn.abort();
@@ -250,6 +300,11 @@ impl NativeSocket {
       .lock()
       .map_err(|_| Error::from_reason("failed to lock socket".to_string()))?;
     *guard = None;
+    let mut path_guard = self
+      .bound_path
+      .lock()
+      .map_err(|_| Error::from_reason("failed to lock bound path".to_string()))?;
+    *path_guard = None;
     Ok(())
   }
 }
