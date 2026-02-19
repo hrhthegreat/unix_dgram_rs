@@ -33,6 +33,7 @@ class UnixDgramSocket extends EventEmitter {
     this._closed = false;
     this._recvStarted = false;
     this._writableScheduled = false;
+    this._congested = false;
     this.connected = false;
     this.fd = 0;
     this.type = type;
@@ -75,6 +76,7 @@ class UnixDgramSocket extends EventEmitter {
     this._writableScheduled = true;
     setTimeout(() => {
       this._writableScheduled = false;
+      this._congested = false;
       this.emit('writable');
     }, 4);
   }
@@ -108,13 +110,16 @@ class UnixDgramSocket extends EventEmitter {
       let status = 0;
       if (this.connected) {
         cb = offset;
-        status = this._native.send(payload);
+        status = this._congested ? 1 : this._native.send(payload);
       } else {
         payload = payload.subarray(offset, offset + length);
         status = this._native.send_to(payload, socketPath);
       }
 
       if (status === 1) {
+        if (this.connected) {
+          this._congested = true;
+        }
         if (typeof cb === 'function') {
           cb(internalError(1, 'congestion'));
         } else {
@@ -129,6 +134,9 @@ class UnixDgramSocket extends EventEmitter {
       }
     } catch (err) {
       if (this.connected || isWouldBlock(err)) {
+        if (this.connected) {
+          this._congested = true;
+        }
         if (typeof cb === 'function') {
           cb(internalError(1, 'congestion'));
         } else {
