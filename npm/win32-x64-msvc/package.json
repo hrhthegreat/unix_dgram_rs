@@ -11,7 +11,7 @@
   "description": "UNIX datagram sockets for Node.js with prebuilt native binaries.",
   "license": "MIT",
   "engines": {
-    "node": ">=18"
+    "node": ">=16"
   },
   "os": [
     "win32"
