@@ -5,8 +5,10 @@
   "license": "MIT",
   "type": "commonjs",
   "main": "index.js",
+  "types": "index.d.ts",
   "files": [
     "index.js",
+    "index.d.ts",
     "lib",
     "Cargo.toml",
     "Cargo.lock",
@@ -19,7 +21,7 @@
     "build": "napi build --platform --release",
     "build:debug": "napi build --platform",
     "artifacts": "napi artifacts",
-    "test": "node --test test/compat.test.js && npm run test:upstream",
+    "test": "node --test test/compat.test.js test/package-metadata.test.js && npm run test:upstream",
     "test:upstream": "node test/upstream/test-dgram-unix.js && node test/upstream/test-connect.js && node test/upstream/test-connect-callback.js && node test/upstream/test-send-error.js",
     "prepublishOnly": "napi create-npm-dirs",
     "version": "napi version"

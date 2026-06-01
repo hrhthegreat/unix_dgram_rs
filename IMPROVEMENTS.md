@@ -17,8 +17,6 @@ ordered by expected impact and should be implemented with compatibility tests.
 
 ## 2. Package Usability
 
-- Populate `index.d.ts`, add npm `types` metadata, and include the declarations
-  in published package contents.
 - Preserve useful native-loader diagnostics instead of silently swallowing all
   local binding failures.
 - Add an automated check that keeps Cargo, root npm, and all platform package
