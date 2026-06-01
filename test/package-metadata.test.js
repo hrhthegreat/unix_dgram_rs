@@ -12,4 +12,5 @@ test('package publishes its TypeScript declarations', () => {
   assert.equal(pkg.types, 'index.d.ts');
   assert.ok(pkg.files.includes(pkg.types));
   assert.ok(fs.existsSync(path.join(root, pkg.types)));
+  assert.ok(fs.statSync(path.join(root, pkg.types)).size > 0);
 });

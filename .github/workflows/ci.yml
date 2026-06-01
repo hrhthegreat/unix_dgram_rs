@@ -22,6 +22,8 @@ jobs:
       - run: npm pack --dry-run
       - run: cargo fmt -- --check
       - run: npm run build
+      - run: node --test test/package-metadata.test.js
+      - run: npm run test:types
       - uses: actions/upload-artifact@v4
         with:
           name: native-${{ matrix.os }}
