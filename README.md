@@ -39,6 +39,11 @@ client.close();
 
 See `API_COMPAT.md`.
 
+## Improvement backlog
+
+See `IMPROVEMENTS.md` for the prioritized hardening and release-confidence
+roadmap.
+
 ## Development
 
 ```bash
