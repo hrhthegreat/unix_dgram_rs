@@ -41,7 +41,9 @@ jobs:
         with:
           targets: ${{ matrix.target }}
       - run: npm ci
-      - run: npx napi build --release --target ${{ matrix.target }} --platform
+      - run: npx napi build --release --target ${{ matrix.target }} --platform --dts target/unix_dgram_rs.native.d.ts
+      - run: node --test test/package-metadata.test.js
+      - run: npm run test:types
       - uses: actions/upload-artifact@v4
         with:
           name: bindings-${{ matrix.target }}
