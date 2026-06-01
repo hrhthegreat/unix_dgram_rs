@@ -1,0 +1,4 @@
+interface:
+  display_name: "Maintain unix_dgram_rs"
+  short_description: "Maintain and release the native socket addon"
+  default_prompt: "Use $maintain-unix-dgram-rs to make a compatibility-safe change and verify the native addon release workflow."
