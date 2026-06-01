@@ -25,6 +25,5 @@ ordered by expected impact and should be implemented with compatibility tests.
 ## 3. Quality And Release Confidence
 
 - Add lifecycle, failure-path, and unsupported-Windows tests.
-- Add package-content validation with `npm pack --dry-run`.
 - Decide whether Linux musl binaries are required.
 - Consolidate overlapping CI build coverage where practical.
