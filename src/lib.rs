@@ -143,9 +143,6 @@ mod imp {
         pub fn bind(&self, path: String) -> Result<()> {
             self.stop_listener()?;
             let socket_path = Path::new(&path);
-            if socket_path.exists() {
-                std::fs::remove_file(socket_path).map_err(io_to_napi)?;
-            }
             let sock = UnixDatagram::bind(socket_path).map_err(io_to_napi)?;
             sock.set_nonblocking(false).map_err(io_to_napi)?;
             let mut guard = self

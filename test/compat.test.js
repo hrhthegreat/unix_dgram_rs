@@ -80,6 +80,36 @@ test('send_to alias works with offset/length', async () => {
   if (fs.existsSync(serverPath)) fs.unlinkSync(serverPath);
 });
 
+test('bind to existing path emits error with EADDRINUSE', async (t) => {
+  if (process.platform === 'win32') {
+    t.skip('UNIX datagram bind is unsupported on Windows');
+  }
+
+  const serverPath = socketPath('bind-in-use');
+  const first = unix.createSocket('unix_dgram');
+  first.bind(serverPath);
+  first.close();
+
+  const second = unix.createSocket('unix_dgram');
+  let sawListening = false;
+  const errorP = new Promise((resolve) => {
+    second.once('error', resolve);
+    second.once('listening', () => {
+      sawListening = true;
+    });
+  });
+  second.bind(serverPath);
+  const err = await errorP;
+
+  assert.equal(sawListening, false);
+  assert.equal(err.syscall, 'bind');
+  assert.equal(err.code, -os.constants.errno.EADDRINUSE);
+  assert.equal(err.errno, -os.constants.errno.EADDRINUSE);
+
+  second.close();
+  if (fs.existsSync(serverPath)) fs.unlinkSync(serverPath);
+});
+
 test('congestion/writable compatibility path emits events', async () => {
   const sock = unix.createSocket('unix_dgram');
   const congestionP = waitForEvent(sock, 'congestion');
