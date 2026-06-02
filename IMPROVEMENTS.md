@@ -5,8 +5,6 @@ ordered by expected impact and should be implemented with compatibility tests.
 
 ## 1. Socket Lifecycle And Safety
 
-- Prevent `bind()` from deleting arbitrary existing files. Only remove stale
-  paths when it is safe to do so.
 - Remove socket paths owned by the process during `close()` and native
   teardown.
 - Ensure listener threads always stop cleanly, including error and teardown

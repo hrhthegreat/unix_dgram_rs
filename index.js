@@ -4,10 +4,31 @@ const { EventEmitter } = require('node:events');
 const dgram = require('node:dgram');
 const { NativeSocket } = require('./lib/native');
 
+function errnoCode(err) {
+  const code = err && err.code;
+  if (code && code !== 'GenericFailure') {
+    return code;
+  }
+
+  const msg = String((err && err.message) || err || '');
+  const named = msg.match(/\b(E[A-Z]+)\b/);
+  if (named && require('node:os').constants.errno[named[1]] !== undefined) {
+    return -require('node:os').constants.errno[named[1]];
+  }
+
+  const osErr = msg.match(/\(os error (\d+)\)/);
+  if (osErr) {
+    return -Number(osErr[1]);
+  }
+
+  return code || -1;
+}
+
 function errnoException(err, syscall) {
-  const e = new Error(`${syscall} ${err.code || err.message || err}`);
-  e.code = err.code || -1;
-  e.errno = e.code;
+  const code = errnoCode(err);
+  const e = new Error(`${syscall} ${code}`);
+  e.code = code;
+  e.errno = code;
   e.syscall = syscall;
   return e;
 }
