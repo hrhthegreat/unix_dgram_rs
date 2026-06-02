@@ -19,8 +19,6 @@ ordered by expected impact and should be implemented with compatibility tests.
 
 - Preserve useful native-loader diagnostics instead of silently swallowing all
   local binding failures.
-- Add an automated check that keeps Cargo, root npm, and all platform package
-  versions aligned.
 
 ## 3. Quality And Release Confidence
 

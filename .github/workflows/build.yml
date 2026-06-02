@@ -41,6 +41,7 @@ jobs:
         with:
           targets: ${{ matrix.target }}
       - run: npm ci
+      - run: npm run check:versions
       - run: npx napi build --release --target ${{ matrix.target }} --platform --dts target/unix_dgram_rs.native.d.ts
       - run: node --test test/package-metadata.test.js
       - run: npm run test:types
@@ -66,6 +67,7 @@ jobs:
         with:
           path: artifacts
       - run: npm ci
+      - run: npm run check:versions
       - run: npx napi create-npm-dirs
       - run: |
           for pkg in npm/*; do
